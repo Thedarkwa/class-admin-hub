@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Shield, LogOut, Upload, Users, FileSpreadsheet, 
-  Loader2, Check, X, School, Plus
+  Loader2, Check, X, School, Plus, Eye
 } from 'lucide-react';
+import SpreadsheetEditor from '@/components/SpreadsheetEditor';
 import {
   Select,
   SelectContent,
@@ -82,6 +83,12 @@ export default function SchoolAdmin() {
   const [classDisplayOrder, setClassDisplayOrder] = useState(1);
   const [isCreatingClass, setIsCreatingClass] = useState(false);
   const [classErrors, setClassErrors] = useState<Record<string, string>>({});
+
+  // View SBA file dialog
+  const [viewingFile, setViewingFile] = useState<{ classId: string; className: string } | null>(null);
+  const [spreadsheetData, setSpreadsheetData] = useState<string[][] | null>(null);
+  const [isLoadingSpreadsheet, setIsLoadingSpreadsheet] = useState(false);
+  const [isSavingSpreadsheet, setIsSavingSpreadsheet] = useState(false);
 
   const checkAdmin = useCallback(async (schoolId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -329,6 +336,74 @@ export default function SchoolAdmin() {
     return teachers.find(t => t.class_id === classId);
   };
 
+  const handleViewFile = async (classId: string, className: string) => {
+    setViewingFile({ classId, className });
+    setIsLoadingSpreadsheet(true);
+    setSpreadsheetData(null);
+
+    const file = sbaFiles.find(f => f.class_id === classId);
+    if (file) {
+      const { data: fileData } = await supabase
+        .from('sba_files')
+        .select('spreadsheet_data')
+        .eq('id', file.id)
+        .single();
+
+      if (fileData?.spreadsheet_data) {
+        setSpreadsheetData(fileData.spreadsheet_data as string[][]);
+      }
+    }
+    setIsLoadingSpreadsheet(false);
+  };
+
+  const handleSaveSpreadsheet = async (data: string[][]) => {
+    if (!viewingFile || !school) return;
+    
+    setIsSavingSpreadsheet(true);
+    const file = sbaFiles.find(f => f.class_id === viewingFile.classId);
+    
+    if (file) {
+      const { error } = await supabase
+        .from('sba_files')
+        .update({ spreadsheet_data: data as unknown as any })
+        .eq('id', file.id);
+
+      if (error) {
+        toast({
+          title: 'Failed to save',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Saved',
+          description: 'Spreadsheet data has been saved.',
+        });
+      }
+    }
+    setIsSavingSpreadsheet(false);
+  };
+
+  const handleDownloadSpreadsheet = async () => {
+    if (!viewingFile) return;
+    
+    const file = sbaFiles.find(f => f.class_id === viewingFile.classId);
+    if (!file) return;
+
+    const { data } = await supabase.storage
+      .from('sba-files')
+      .download(file.file_path);
+
+    if (data) {
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.file_name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   if (loading || !school) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -530,7 +605,17 @@ export default function SchoolAdmin() {
                             </p>
                           )}
                         </div>
-                        <div>
+                        <div className="flex gap-2">
+                          {file && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewFile(cls.id, cls.name)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Open
+                            </Button>
+                          )}
                           <label>
                             <input
                               type="file"
@@ -641,6 +726,30 @@ export default function SchoolAdmin() {
           </Card>
         </div>
       </main>
+
+      {/* SBA File Viewer Dialog */}
+      <Dialog open={!!viewingFile} onOpenChange={(open) => !open && setViewingFile(null)}>
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" style={{ color: school.primary_color }} />
+              {viewingFile?.className} - SBA File
+            </DialogTitle>
+            <DialogDescription>
+              View and edit the SBA spreadsheet data
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            <SpreadsheetEditor
+              data={spreadsheetData || []}
+              onSave={handleSaveSpreadsheet}
+              onDownload={handleDownloadSpreadsheet}
+              isSaving={isSavingSpreadsheet}
+              isLoading={isLoadingSpreadsheet}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
