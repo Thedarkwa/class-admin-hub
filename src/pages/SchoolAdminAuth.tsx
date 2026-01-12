@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Loader2, GraduationCap } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
 interface SchoolInfo {
@@ -22,15 +23,30 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+const signupSchema = loginSchema.extend({
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
+
 export default function SchoolAdminAuth() {
   const { schoolSlug } = useParams<{ schoolSlug: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSchool, setIsLoadingSchool] = useState(true);
   const [school, setSchool] = useState<SchoolInfo | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  
+  // Signup state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -92,20 +108,20 @@ export default function SchoolAdminAuth() {
   }, [school, schoolSlug, navigate]);
 
   const handleForgotPassword = async () => {
-    if (!email) {
+    if (!loginEmail) {
       setErrors({ email: 'Please enter your email address first' });
       return;
     }
     
     try {
-      z.string().email().parse(email);
+      z.string().email().parse(loginEmail);
     } catch {
       setErrors({ email: 'Please enter a valid email address' });
       return;
     }
 
     setIsLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setIsLoading(false);
@@ -130,7 +146,7 @@ export default function SchoolAdminAuth() {
     setErrors({});
     
     try {
-      loginSchema.parse({ email, password });
+      loginSchema.parse({ email: loginEmail, password: loginPassword });
     } catch (err) {
       if (err instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
@@ -147,8 +163,8 @@ export default function SchoolAdminAuth() {
     setIsLoading(true);
     
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: loginEmail,
+      password: loginPassword,
     });
 
     if (authError) {
@@ -190,6 +206,89 @@ export default function SchoolAdminAuth() {
     setIsLoading(false);
   };
 
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    
+    try {
+      signupSchema.parse({ 
+        email: signupEmail, 
+        password: signupPassword, 
+        confirmPassword: signupConfirmPassword,
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        err.errors.forEach((error) => {
+          newErrors[`signup_${error.path[0]}`] = error.message;
+        });
+        setErrors(newErrors);
+        return;
+      }
+    }
+
+    if (!school) return;
+
+    setIsLoading(true);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email: signupEmail,
+      password: signupPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/s/${schoolSlug}/admin`,
+      },
+    });
+
+    if (error) {
+      const message = error.message.includes('already registered')
+        ? 'This email is already registered. Please login instead.'
+        : error.message;
+      toast({
+        title: 'Registration Failed',
+        description: message,
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (!data.user) {
+      toast({
+        title: 'Registration Failed',
+        description: 'Could not create account.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Add admin role with school_id
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: data.user.id,
+        role: 'admin',
+        school_id: school.id,
+      });
+
+    if (roleError) {
+      toast({
+        title: 'Registration Failed',
+        description: roleError.message,
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
+    toast({
+      title: 'Registration Successful',
+      description: 'Welcome! Your admin account has been created.',
+    });
+    navigate(`/s/${schoolSlug}/admin`);
+  };
+
   if (isLoadingSchool || checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -225,68 +324,139 @@ export default function SchoolAdminAuth() {
 
         <Card className="glass-card">
           <CardHeader className="text-center pb-4">
-            <CardTitle>Administrator Login</CardTitle>
+            <CardTitle>Administrator Portal</CardTitle>
             <CardDescription>
-              Sign in with your admin credentials
+              Sign in or create your admin account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@school.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    className="text-sm hover:underline"
-                    style={{ color: school.primary_color }}
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="admin@school.edu"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password">Password</Label>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="text-sm hover:underline"
+                        style={{ color: school.primary_color }}
+                        disabled={isLoading}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.password && (
+                      <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
                     disabled={isLoading}
+                    style={{ backgroundColor: school.primary_color }}
                   >
-                    Forgot password?
-                  </button>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-                style={{ backgroundColor: school.primary_color }}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In as Admin'
-                )}
-              </Button>
-            </form>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign In as Admin'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup">
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="admin@school.edu"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.signup_email && (
+                      <p className="text-sm text-destructive">{errors.signup_email}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.signup_password && (
+                      <p className="text-sm text-destructive">{errors.signup_password}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                    <Input
+                      id="signup-confirm-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={signupConfirmPassword}
+                      onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.signup_confirmPassword && (
+                      <p className="text-sm text-destructive">{errors.signup_confirmPassword}</p>
+                    )}
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    style={{ backgroundColor: school.primary_color }}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      'Create Admin Account'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
