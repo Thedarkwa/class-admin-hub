@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, Loader2 } from 'lucide-react';
 import SchoolFinder from '@/components/SchoolFinder';
+import heroImage from '@/assets/hero-classroom.jpg';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -44,23 +45,30 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <div className="container mx-auto px-4 py-16 sm:py-20 relative">
+      {/* Hero Section with Background Image */}
+      <div className="relative overflow-hidden min-h-[400px] sm:min-h-[500px]">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        />
+        {/* Dark Overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+        
+        <div className="container mx-auto px-4 py-20 sm:py-28 relative z-10">
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
             {/* Logo */}
             <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center justify-center w-20 h-20 rounded-2xl gradient-primary shadow-lg">
-                <GraduationCap className="h-10 w-10 text-primary-foreground" />
+              <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg border border-white/30">
+                <GraduationCap className="h-10 w-10 text-white" />
               </div>
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 tracking-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
               SBA Manager
             </h1>
-            <p className="text-xl text-muted-foreground mb-6 max-w-xl mx-auto">
+            <p className="text-xl sm:text-2xl text-white/90 mb-6 max-w-xl mx-auto drop-shadow-md">
               School-Based Assessment System for managing student assessments across all classes
             </p>
           </div>
