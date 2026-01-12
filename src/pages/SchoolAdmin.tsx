@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Shield, LogOut, Upload, Users, FileSpreadsheet, 
-  Loader2, Check, X, School, Plus, Eye, Download
+  Loader2, Check, X, School, Plus, Eye, Download, FolderOpen, History
 } from 'lucide-react';
 import ExcelViewer from '@/components/ExcelViewer';
 import {
@@ -60,6 +60,9 @@ interface SBAFile {
   file_name: string;
   file_path: string;
   updated_at: string;
+  version: 'original' | 'updated';
+  original_file_path: string | null;
+  original_file_name: string | null;
 }
 
 const classSchema = z.object({
@@ -145,10 +148,10 @@ export default function SchoolAdmin() {
     // Fetch SBA files
     const { data: filesData } = await supabase
       .from('sba_files')
-      .select('id, class_id, file_name, file_path, updated_at')
+      .select('id, class_id, file_name, file_path, updated_at, version, original_file_path, original_file_name')
       .eq('school_id', schoolId);
 
-    if (filesData) setSbaFiles(filesData);
+    if (filesData) setSbaFiles(filesData as SBAFile[]);
 
     setLoading(false);
   }, []);
@@ -274,8 +277,8 @@ export default function SchoolAdmin() {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as string[][];
 
-      // Upload file to storage
-      const filePath = `${school.id}/${classId}/${file.name}`;
+      // Upload file to storage - admin uploads go to 'original' folder
+      const filePath = `${school.id}/${classId}/original/${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('sba-files')
         .upload(filePath, file, { upsert: true });
@@ -286,12 +289,16 @@ export default function SchoolAdmin() {
       const existingFile = sbaFiles.find(f => f.class_id === classId);
 
       if (existingFile) {
+        // Admin is replacing the file - reset to original version
         const { error } = await supabase
           .from('sba_files')
           .update({
             file_name: file.name,
             file_path: filePath,
             spreadsheet_data: jsonData as unknown as any,
+            version: 'original',
+            original_file_path: null,
+            original_file_name: null,
           })
           .eq('id', existingFile.id);
 
@@ -305,6 +312,7 @@ export default function SchoolAdmin() {
             file_path: filePath,
             spreadsheet_data: jsonData as unknown as any,
             school_id: school.id,
+            version: 'original',
           });
 
         if (error) throw error;
@@ -548,7 +556,7 @@ export default function SchoolAdmin() {
                   No classes yet. Click "Add Class" to create one.
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {classes.map((cls) => {
                     const file = getFileForClass(cls.id);
                     const teacher = getTeacherForClass(cls.id);
@@ -557,69 +565,33 @@ export default function SchoolAdmin() {
                     return (
                       <div
                         key={cls.id}
-                        className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-lg border bg-card"
+                        className="rounded-lg border bg-card overflow-hidden"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                        {/* Class Header */}
+                        <div className="flex items-center justify-between p-4 bg-muted/30 border-b">
+                          <div className="flex items-center gap-3">
+                            <FolderOpen className="h-5 w-5" style={{ color: school.primary_color }} />
                             <Badge 
                               variant="secondary"
+                              className="text-base font-semibold px-3 py-1"
                               style={{ backgroundColor: `${school.primary_color}20`, color: school.primary_color }}
                             >
                               {cls.name}
                             </Badge>
                             {teacher && (
                               <span className="text-sm text-muted-foreground">
-                                • {teacher.full_name}
+                                • Assigned: {teacher.full_name}
                               </span>
                             )}
                           </div>
-                          {file ? (
-                            <div className="mt-1">
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Check className="h-4 w-4 text-green-500" />
-                                {file.file_name}
-                              </p>
-                              <p className="text-xs text-muted-foreground ml-5">
-                                Last updated: {new Date(file.updated_at).toLocaleString()}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                              <X className="h-4 w-4 text-destructive" />
-                              No file uploaded
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          {file && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownloadFile(file.file_path, file.file_name)}
-                                title="Download the latest Excel file"
-                              >
-                                <Download className="h-4 w-4 mr-2" />
-                                Download
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewFile(cls.id, cls.name)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Open
-                              </Button>
-                            </>
-                          )}
                           <label>
                             <input
                               type="file"
                               accept=".xlsx,.xls"
                               className="hidden"
                               onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileUpload(cls.id, file);
+                                const uploadFile = e.target.files?.[0];
+                                if (uploadFile) handleFileUpload(cls.id, uploadFile);
                                 e.target.value = '';
                               }}
                               disabled={isUploading}
@@ -639,12 +611,110 @@ export default function SchoolAdmin() {
                                 ) : (
                                   <>
                                     <Upload className="h-4 w-4 mr-2" />
-                                    {file ? 'Replace' : 'Upload'}
+                                    {file ? 'Upload New Original' : 'Upload SBA'}
                                   </>
                                 )}
                               </span>
                             </Button>
                           </label>
+                        </div>
+
+                        {/* Files Content */}
+                        <div className="p-4">
+                          {!file ? (
+                            <div className="text-center py-6 text-muted-foreground">
+                              <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                              <p>No SBA file uploaded yet</p>
+                              <p className="text-xs mt-1">Upload an Excel file to get started</p>
+                            </div>
+                          ) : (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              {/* Original File Card */}
+                              <div className="border rounded-lg p-4 bg-green-50/50 dark:bg-green-950/20">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Original
+                                  </Badge>
+                                </div>
+                                <p className="font-medium text-sm truncate" title={file.original_file_name || file.file_name}>
+                                  {file.version === 'updated' ? file.original_file_name : file.file_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Admin uploaded file
+                                </p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      const path = file.version === 'updated' ? file.original_file_path : file.file_path;
+                                      const name = file.version === 'updated' ? file.original_file_name : file.file_name;
+                                      if (path && name) handleDownloadFile(path, name);
+                                    }}
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Updated File Card */}
+                              <div className={`border rounded-lg p-4 ${file.version === 'updated' ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'bg-muted/20'}`}>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={file.version === 'updated' 
+                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' 
+                                      : 'bg-muted text-muted-foreground'
+                                    }
+                                  >
+                                    <History className="h-3 w-3 mr-1" />
+                                    Teacher Updated
+                                  </Badge>
+                                </div>
+                                {file.version === 'updated' ? (
+                                  <>
+                                    <p className="font-medium text-sm truncate" title={file.file_name}>
+                                      {file.file_name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Last updated: {new Date(file.updated_at).toLocaleString()}
+                                    </p>
+                                    <div className="flex gap-2 mt-3">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={() => handleDownloadFile(file.file_path, file.file_name)}
+                                      >
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleViewFile(cls.id, cls.name)}
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View
+                                      </Button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-sm text-muted-foreground">
+                                      No updates yet
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Waiting for teacher to upload
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -741,6 +811,7 @@ export default function SchoolAdmin() {
                 filePath={viewingFile.filePath}
                 fileName={viewingFile.fileName}
                 onSaveComplete={handleSaveComplete}
+                readOnly
               />
             )}
           </div>
