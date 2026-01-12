@@ -14,6 +14,7 @@ interface SBAFile {
   class_id: string;
   file_name: string;
   file_path: string;
+  school_id: string;
 }
 
 export default function Dashboard() {
@@ -43,7 +44,7 @@ export default function Dashboard() {
     setIsLoadingSBA(true);
     const { data, error } = await supabase
       .from('sba_files')
-      .select('id, class_id, file_name, file_path')
+      .select('id, class_id, file_name, file_path, school_id')
       .eq('class_id', profile.class_id)
       .single();
 
@@ -61,6 +62,7 @@ export default function Dashboard() {
         class_id: data.class_id,
         file_name: data.file_name,
         file_path: data.file_path,
+        school_id: data.school_id || '',
       });
     }
     setIsLoadingSBA(false);
@@ -189,6 +191,9 @@ export default function Dashboard() {
                   <ExcelViewer
                     filePath={sbaFile.file_path}
                     fileName={sbaFile.file_name}
+                    classId={sbaFile.class_id}
+                    schoolId={sbaFile.school_id}
+                    onSaveComplete={fetchSBAFile}
                   />
                 </div>
               </CardContent>

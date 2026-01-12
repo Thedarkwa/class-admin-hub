@@ -53,9 +53,12 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          original_file_name: string | null
+          original_file_path: string | null
           school_id: string | null
           spreadsheet_data: Json | null
           updated_at: string
+          version: string
         }
         Insert: {
           class_id: string
@@ -63,9 +66,12 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          original_file_name?: string | null
+          original_file_path?: string | null
           school_id?: string | null
           spreadsheet_data?: Json | null
           updated_at?: string
+          version?: string
         }
         Update: {
           class_id?: string
@@ -73,9 +79,12 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          original_file_name?: string | null
+          original_file_path?: string | null
           school_id?: string | null
           spreadsheet_data?: Json | null
           updated_at?: string
+          version?: string
         }
         Relationships: [
           {
