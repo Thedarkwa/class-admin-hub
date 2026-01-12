@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Shield, LogOut, Upload, Users, FileSpreadsheet, 
-  Loader2, Check, X, School, Plus, Eye
+  Loader2, Check, X, School, Plus, Eye, Download
 } from 'lucide-react';
 import ExcelViewer from '@/components/ExcelViewer';
 import {
@@ -351,6 +351,38 @@ export default function SchoolAdmin() {
     }
   };
 
+  const handleDownloadFile = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error: downloadError } = await supabase.storage
+        .from('sba-files')
+        .download(filePath);
+
+      if (downloadError || !data) {
+        throw new Error(downloadError?.message || 'Download failed');
+      }
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Download started',
+        description: 'The Excel file is being downloaded.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Download failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading || !school) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -554,14 +586,25 @@ export default function SchoolAdmin() {
                         </div>
                         <div className="flex gap-2">
                           {file && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewFile(cls.id, cls.name)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Open
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadFile(file.file_path, file.file_name)}
+                                title="Download the latest Excel file"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewFile(cls.id, cls.name)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Open
+                              </Button>
+                            </>
                           )}
                           <label>
                             <input
