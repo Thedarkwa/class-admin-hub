@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Crown, Loader2 } from 'lucide-react';
+import { Crown, Loader2, Home } from 'lucide-react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -150,6 +151,17 @@ export default function SuperAdminAuth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      {/* Home Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4"
+        onClick={() => navigate('/')}
+      >
+        <Home className="h-4 w-4 mr-2" />
+        Home
+      </Button>
+
       <div className="w-full max-w-md animate-slide-up">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500 mb-4">
@@ -196,10 +208,8 @@ export default function SuperAdminAuth() {
                     Forgot password?
                   </button>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}

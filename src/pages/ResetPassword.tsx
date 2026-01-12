@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Loader2, CheckCircle } from 'lucide-react';
+import { KeyRound, Loader2, CheckCircle, Home } from 'lucide-react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { z } from 'zod';
 
 const passwordSchema = z.object({
@@ -28,7 +28,6 @@ export default function ResetPassword() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -137,6 +136,17 @@ export default function ResetPassword() {
   if (!isValidSession) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+        {/* Home Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 left-4"
+          onClick={() => navigate('/')}
+        >
+          <Home className="h-4 w-4 mr-2" />
+          Home
+        </Button>
+
         <div className="w-full max-w-md animate-slide-up text-center">
           <div className="flex flex-col items-center mb-8">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive mb-4">
@@ -157,6 +167,17 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      {/* Home Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4"
+        onClick={() => navigate('/')}
+      >
+        <Home className="h-4 w-4 mr-2" />
+        Home
+      </Button>
+
       <div className="w-full max-w-md animate-slide-up">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
@@ -179,10 +200,8 @@ export default function ResetPassword() {
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">New Password</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -193,10 +212,8 @@ export default function ResetPassword() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}

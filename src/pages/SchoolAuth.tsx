@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, GraduationCap, Loader2 } from 'lucide-react';
+import { BookOpen, GraduationCap, Loader2, Home } from 'lucide-react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { z } from 'zod';
 
 interface ClassInfo {
@@ -340,6 +341,17 @@ export default function SchoolAuth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      {/* Home Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4"
+        onClick={() => navigate('/')}
+      >
+        <Home className="h-4 w-4 mr-2" />
+        Home
+      </Button>
+
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo and Title */}
         <div className="flex flex-col items-center mb-8">
@@ -405,10 +417,8 @@ export default function SchoolAuth() {
                         Forgot password?
                       </button>
                     </div>
-                    <Input
+                    <PasswordInput
                       id="login-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       disabled={isLoading}
@@ -492,10 +502,8 @@ export default function SchoolAuth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       disabled={isLoading}
@@ -506,10 +514,8 @@ export default function SchoolAuth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                    <Input
+                    <PasswordInput
                       id="signup-confirm-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={signupConfirmPassword}
                       onChange={(e) => setSignupConfirmPassword(e.target.value)}
                       disabled={isLoading}
