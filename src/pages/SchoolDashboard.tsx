@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import SpreadsheetEditor from '@/components/SpreadsheetEditor';
+import ExcelViewer from '@/components/ExcelViewer';
 import { GraduationCap, LogOut, User, School, FileSpreadsheet, Loader2, AlertCircle } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 interface SchoolInfo {
   id: string;
@@ -31,7 +30,7 @@ interface SBAFile {
   id: string;
   class_id: string;
   file_name: string;
-  spreadsheet_data: string[][] | null;
+  file_path: string;
 }
 
 export default function SchoolDashboard() {
@@ -44,9 +43,7 @@ export default function SchoolDashboard() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sbaFile, setSbaFile] = useState<SBAFile | null>(null);
-  const [spreadsheetData, setSpreadsheetData] = useState<string[][]>([]);
   const [isLoadingSBA, setIsLoadingSBA] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -134,7 +131,7 @@ export default function SchoolDashboard() {
       setIsLoadingSBA(true);
       const { data, error } = await supabase
         .from('sba_files')
-        .select('*')
+        .select('id, class_id, file_name, file_path')
         .eq('class_id', profile.class_id)
         .single();
 
@@ -151,11 +148,8 @@ export default function SchoolDashboard() {
           id: data.id,
           class_id: data.class_id,
           file_name: data.file_name,
-          spreadsheet_data: data.spreadsheet_data as string[][] | null,
+          file_path: data.file_path,
         });
-        if (data.spreadsheet_data) {
-          setSpreadsheetData(data.spreadsheet_data as string[][]);
-        }
       }
       setIsLoadingSBA(false);
     };
@@ -164,45 +158,6 @@ export default function SchoolDashboard() {
       fetchSBAFile();
     }
   }, [profile, toast]);
-
-  const handleSave = async (data: string[][]) => {
-    if (!sbaFile) return;
-    
-    setIsSaving(true);
-    const { error } = await supabase
-      .from('sba_files')
-      .update({ spreadsheet_data: data as unknown as any })
-      .eq('id', sbaFile.id);
-
-    if (error) {
-      toast({
-        title: 'Failed to save',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } else {
-      setSpreadsheetData(data);
-      toast({
-        title: 'Saved successfully',
-        description: 'Your changes have been saved.',
-      });
-    }
-    setIsSaving(false);
-  };
-
-  const handleDownload = useCallback(() => {
-    if (!spreadsheetData.length || !sbaFile) return;
-
-    const ws = XLSX.utils.aoa_to_sheet(spreadsheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'SBA Data');
-    XLSX.writeFile(wb, sbaFile.file_name || 'sba_data.xlsx');
-    
-    toast({
-      title: 'Download started',
-      description: 'Your file is being downloaded.',
-    });
-  }, [spreadsheetData, sbaFile, toast]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -286,7 +241,6 @@ export default function SchoolDashboard() {
             </CardHeader>
           </Card>
 
-          {/* SBA Editor */}
           {!profile?.class_id ? (
             <Card className="glass-card">
               <CardContent className="flex flex-col items-center justify-center py-16">
@@ -299,7 +253,14 @@ export default function SchoolDashboard() {
                 </p>
               </CardContent>
             </Card>
-          ) : !sbaFile && !isLoadingSBA ? (
+          ) : isLoadingSBA ? (
+            <Card className="glass-card">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Loading SBA file...</p>
+              </CardContent>
+            </Card>
+          ) : !sbaFile ? (
             <Card className="glass-card">
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <FileSpreadsheet className="h-12 w-12 text-muted-foreground mb-4" />
@@ -318,22 +279,19 @@ export default function SchoolDashboard() {
                   <div>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <FileSpreadsheet className="h-5 w-5" style={{ color: school.primary_color }} />
-                      {sbaFile?.file_name || 'SBA Assessment'}
+                      {sbaFile.file_name}
                     </CardTitle>
                     <CardDescription>
-                      {profile?.class_name} - Double-click a cell to edit
+                      {profile?.class_name} - Edit with Excel formulas preserved
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4 pt-2">
-                <div className="h-[calc(100vh-380px)] min-h-[400px]">
-                  <SpreadsheetEditor
-                    data={spreadsheetData}
-                    onSave={handleSave}
-                    onDownload={handleDownload}
-                    isSaving={isSaving}
-                    isLoading={isLoadingSBA}
+                <div className="h-[calc(100vh-380px)] min-h-[500px]">
+                  <ExcelViewer
+                    filePath={sbaFile.file_path}
+                    fileName={sbaFile.file_name}
                   />
                 </div>
               </CardContent>
