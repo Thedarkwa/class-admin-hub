@@ -59,6 +59,7 @@ interface SBAFile {
   class_id: string;
   file_name: string;
   file_path: string;
+  updated_at: string;
 }
 
 const classSchema = z.object({
@@ -144,7 +145,7 @@ export default function SchoolAdmin() {
     // Fetch SBA files
     const { data: filesData } = await supabase
       .from('sba_files')
-      .select('id, class_id, file_name, file_path')
+      .select('id, class_id, file_name, file_path, updated_at')
       .eq('school_id', schoolId);
 
     if (filesData) setSbaFiles(filesData);
@@ -573,10 +574,15 @@ export default function SchoolAdmin() {
                             )}
                           </div>
                           {file ? (
-                            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                              <Check className="h-4 w-4 text-green-500" />
-                              {file.file_name}
-                            </p>
+                            <div className="mt-1">
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Check className="h-4 w-4 text-green-500" />
+                                {file.file_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground ml-5">
+                                Last updated: {new Date(file.updated_at).toLocaleString()}
+                              </p>
+                            </div>
                           ) : (
                             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
                               <X className="h-4 w-4 text-destructive" />
