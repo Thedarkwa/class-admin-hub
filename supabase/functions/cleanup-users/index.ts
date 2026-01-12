@@ -53,41 +53,43 @@ serve(async (req) => {
       );
     }
 
-    // Get all non-super-admin users
-    const { data: usersToDelete } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .neq("role", "super_admin");
+    // Get all auth users
+    const { data: allUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      return new Response(
+        JSON.stringify({ error: "Failed to list users: " + listError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const deletedUsers: string[] = [];
     const errors: string[] = [];
 
-    if (usersToDelete && usersToDelete.length > 0) {
-      const uniqueUserIds = [...new Set(usersToDelete.map(u => u.user_id))];
-      
-      for (const userId of uniqueUserIds) {
-        // Skip the super admin
-        if (userId === user.id) continue;
+    if (allUsers?.users && allUsers.users.length > 0) {
+      for (const authUser of allUsers.users) {
+        // Skip the super admin (the requesting user)
+        if (authUser.id === user.id) continue;
 
         // Delete teacher_profiles
         await supabaseAdmin
           .from("teacher_profiles")
           .delete()
-          .eq("user_id", userId);
+          .eq("user_id", authUser.id);
 
         // Delete user_roles
         await supabaseAdmin
           .from("user_roles")
           .delete()
-          .eq("user_id", userId);
+          .eq("user_id", authUser.id);
 
         // Delete the auth user
-        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(authUser.id);
         
         if (deleteError) {
-          errors.push(`Failed to delete user ${userId}: ${deleteError.message}`);
+          errors.push(`Failed to delete user ${authUser.id}: ${deleteError.message}`);
         } else {
-          deletedUsers.push(userId);
+          deletedUsers.push(authUser.id);
         }
       }
     }
