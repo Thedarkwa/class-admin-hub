@@ -91,6 +91,40 @@ export default function SchoolAdminAuth() {
     }
   }, [school, schoolSlug, navigate]);
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setErrors({ email: 'Please enter your email address first' });
+      return;
+    }
+    
+    try {
+      z.string().email().parse(email);
+    } catch {
+      setErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/s/${schoolSlug}/admin-auth`,
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Password Reset Email Sent',
+      description: 'Check your email for a link to reset your password.',
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -213,7 +247,18 @@ export default function SchoolAdminAuth() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-sm hover:underline"
+                    style={{ color: school.primary_color }}
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <Input
                   id="password"
                   type="password"
