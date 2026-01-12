@@ -83,50 +83,59 @@ export default function ExcelViewer({
 
     setUploading(true);
     try {
-      // Teacher uploads go to 'updated' folder
-      const updatedFilePath = `${schoolId}/${classId}/updated/${file.name}`;
-      
+      // Always upload to a unique path to avoid triggering a storage UPDATE (which can fail under RLS)
+      const uniqueId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : String(Date.now());
+
+      const updatedFilePath = `${schoolId}/${classId}/updated/${uniqueId}-${file.name}`;
+
       const { error: uploadError } = await supabase.storage
-        .from('sba-files')
-        .upload(updatedFilePath, file, { upsert: true });
+        .from("sba-files")
+        .upload(updatedFilePath, file, { upsert: false });
 
       if (uploadError) {
-        throw new Error(uploadError.message);
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
 
       // Get the current SBA file record to preserve original file info
-      const { data: currentFile } = await supabase
-        .from('sba_files')
-        .select('file_path, file_name, version, original_file_path, original_file_name')
-        .eq('class_id', classId)
+      const { data: currentFile, error: currentFileError } = await supabase
+        .from("sba_files")
+        .select("id, file_path, file_name, version, original_file_path, original_file_name")
+        .eq("class_id", classId)
         .single();
 
-      if (currentFile) {
-        // If this is the first update, store the original file info
-        const originalPath = currentFile.version === 'original' ? currentFile.file_path : currentFile.original_file_path;
-        const originalName = currentFile.version === 'original' ? currentFile.file_name : currentFile.original_file_name;
+      if (currentFileError || !currentFile) {
+        throw new Error(`Could not load SBA record: ${currentFileError?.message ?? "Not found"}`);
+      }
 
-        const { error: updateError } = await supabase
-          .from('sba_files')
-          .update({
-            file_path: updatedFilePath,
-            file_name: file.name,
-            version: 'updated',
-            original_file_path: originalPath,
-            original_file_name: originalName,
-          })
-          .eq('class_id', classId);
+      // If this is the first update, store the original file info
+      const originalPath =
+        currentFile.version === "original" ? currentFile.file_path : currentFile.original_file_path;
+      const originalName =
+        currentFile.version === "original" ? currentFile.file_name : currentFile.original_file_name;
 
-        if (updateError) {
-          throw new Error(updateError.message);
-        }
+      const { error: updateError } = await supabase
+        .from("sba_files")
+        .update({
+          file_path: updatedFilePath,
+          file_name: file.name,
+          version: "updated",
+          original_file_path: originalPath,
+          original_file_name: originalName,
+        })
+        .eq("id", currentFile.id);
+
+      if (updateError) {
+        throw new Error(`Database update failed: ${updateError.message}`);
       }
 
       toast({
-        title: 'File updated successfully',
-        description: 'Your Excel file has been saved with all formulas intact.',
+        title: "File updated successfully",
+        description: "Your Excel file has been saved with all formulas intact.",
       });
-      
+
       onSaveComplete?.();
     } catch (err: any) {
       toast({

@@ -295,7 +295,7 @@ export default function SchoolDashboard() {
                     filePath={sbaFile.file_path}
                     fileName={sbaFile.file_name}
                     classId={sbaFile.class_id}
-                    schoolId={sbaFile.school_id}
+                    schoolId={profile.school_id}
                   />
                 </div>
               </CardContent>
