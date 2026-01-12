@@ -81,42 +81,79 @@ serve(async (req) => {
       );
     }
 
-    // Create the admin user using admin API (doesn't affect current session)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm the email
-      user_metadata: {
-        full_name: "School Administrator",
-      },
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    let userId: string;
 
-    if (!authData.user) {
-      return new Response(
-        JSON.stringify({ error: "Failed to create user" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (existingUser) {
+      // User exists - update their password and use their ID
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        { 
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: "School Administrator" },
+        }
       );
+      
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      userId = existingUser.id;
+      
+      // Remove any existing roles for this user
+      await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+    } else {
+      // Create new user
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: "School Administrator",
+        },
+      });
+
+      if (authError) {
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!authData.user) {
+        return new Response(
+          JSON.stringify({ error: "Failed to create user" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      userId = authData.user.id;
     }
 
     // Add admin role with school_id
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
-        user_id: authData.user.id,
+        user_id: userId,
         role: "admin",
         school_id: schoolId,
       });
 
     if (roleError) {
-      // Try to clean up the created user if role assignment fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      // Try to clean up the created user if role assignment fails (only for new users)
+      if (!existingUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       return new Response(
         JSON.stringify({ error: "Failed to assign admin role: " + roleError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -127,7 +164,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: `Admin created for ${school.name}`,
-        userId: authData.user.id,
+        userId,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
