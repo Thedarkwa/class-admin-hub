@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield, Loader2, Home } from 'lucide-react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { z } from 'zod';
 
 interface SchoolInfo {
@@ -303,6 +304,17 @@ export default function SchoolAdminAuth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      {/* Home Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4"
+        onClick={() => navigate('/')}
+      >
+        <Home className="h-4 w-4 mr-2" />
+        Home
+      </Button>
+
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo and Title */}
         <div className="flex flex-col items-center mb-8">
@@ -365,10 +377,8 @@ export default function SchoolAdminAuth() {
                         Forgot password?
                       </button>
                     </div>
-                    <Input
+                    <PasswordInput
                       id="login-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       disabled={isLoading}
@@ -413,10 +423,8 @@ export default function SchoolAdminAuth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       disabled={isLoading}
@@ -427,10 +435,8 @@ export default function SchoolAdminAuth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                    <Input
+                    <PasswordInput
                       id="signup-confirm-password"
-                      type="password"
-                      placeholder="••••••••"
                       value={signupConfirmPassword}
                       onChange={(e) => setSignupConfirmPassword(e.target.value)}
                       disabled={isLoading}
