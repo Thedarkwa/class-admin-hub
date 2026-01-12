@@ -334,9 +334,15 @@ export default function Auth() {
 
         <div className="text-center text-sm text-muted-foreground mt-6 space-y-2">
           <p>Contact your school administrator for account assistance</p>
-          <a href="/admin-auth" className="text-primary hover:underline block">
-            Administrator Login →
-          </a>
+          <div className="flex justify-center gap-4">
+            <a href="/admin-auth" className="text-primary hover:underline">
+              Admin Login
+            </a>
+            <span>•</span>
+            <a href="/admin-setup" className="text-primary hover:underline">
+              First Admin Setup
+            </a>
+          </div>
         </div>
       </div>
     </div>
