@@ -60,7 +60,7 @@ export default function SuperAdminAuth() {
 
     setIsLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/super-admin-auth`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setIsLoading(false);
 
