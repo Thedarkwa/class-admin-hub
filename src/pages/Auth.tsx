@@ -1,14 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen, GraduationCap, Loader2 } from 'lucide-react';
 import { z } from 'zod';
+
+interface ClassInfo {
+  id: string;
+  name: string;
+}
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -17,6 +30,7 @@ const loginSchema = z.object({
 
 const signupSchema = loginSchema.extend({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  classId: z.string().min(1, 'Please select a class'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -25,12 +39,15 @@ const signupSchema = loginSchema.extend({
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [availableClasses, setAvailableClasses] = useState<ClassInfo[]>([]);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [signupFullName, setSignupFullName] = useState('');
+  const [signupClass, setSignupClass] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { signIn, signUp, user, loading } = useAuth();
@@ -42,6 +59,21 @@ export default function Auth() {
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const { data } = await supabase
+        .from('classes')
+        .select('id, name')
+        .order('display_order');
+      
+      if (data) {
+        setAvailableClasses(data);
+      }
+      setIsLoadingClasses(false);
+    };
+    fetchClasses();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +119,7 @@ export default function Auth() {
         password: signupPassword, 
         confirmPassword: signupConfirmPassword,
         fullName: signupFullName,
+        classId: signupClass,
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -100,7 +133,7 @@ export default function Auth() {
     }
 
     setIsLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupFullName);
+    const { error } = await signUp(signupEmail, signupPassword, signupFullName, signupClass);
     setIsLoading(false);
 
     if (error) {
@@ -115,7 +148,7 @@ export default function Auth() {
     } else {
       toast({
         title: 'Registration Successful',
-        description: 'Welcome! Your account has been created. Please contact the administrator to be assigned to a class.',
+        description: 'Welcome! Your account has been created and you have been assigned to your class.',
       });
       navigate('/dashboard');
     }
@@ -220,6 +253,28 @@ export default function Auth() {
                     )}
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="signup-class">Select Your Class</Label>
+                    <Select
+                      value={signupClass}
+                      onValueChange={setSignupClass}
+                      disabled={isLoading || isLoadingClasses}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableClasses.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.signup_class && (
+                      <p className="text-sm text-destructive">{errors.signup_class}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
@@ -261,7 +316,7 @@ export default function Auth() {
                       <p className="text-sm text-destructive">{errors.signup_confirmPassword}</p>
                     )}
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full" disabled={isLoading || !signupClass}>
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -277,9 +332,12 @@ export default function Auth() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Contact your school administrator for account assistance
-        </p>
+        <div className="text-center text-sm text-muted-foreground mt-6 space-y-2">
+          <p>Contact your school administrator for account assistance</p>
+          <a href="/admin-auth" className="text-primary hover:underline block">
+            Administrator Login →
+          </a>
+        </div>
       </div>
     </div>
   );
