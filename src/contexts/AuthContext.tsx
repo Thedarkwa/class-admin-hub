@@ -16,7 +16,7 @@ interface AuthContextType {
   profile: TeacherProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, classId: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, classId: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -109,18 +109,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) return { error: error as Error };
 
-    // Create teacher profile
+    // Create teacher profile with class assignment
     if (data.user) {
       const { error: profileError } = await supabase
         .from('teacher_profiles')
         .insert({
           user_id: data.user.id,
           full_name: fullName,
+          class_id: classId,
         });
 
       if (profileError) {
         return { error: profileError as Error };
       }
+      
+      // Add teacher role
+      await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.user.id,
+          role: 'teacher',
+        });
     }
 
     return { error: null };
