@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Shield, FileSpreadsheet, ArrowRight, Loader2, Settings } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, Loader2 } from 'lucide-react';
 import SchoolFinder from '@/components/SchoolFinder';
 
 export default function Index() {
@@ -47,10 +47,10 @@ export default function Index() {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <div className="container mx-auto px-4 py-16 sm:py-24 relative">
+        <div className="container mx-auto px-4 py-16 sm:py-20 relative">
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
             {/* Logo */}
-            <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center justify-center mb-6">
               <div className="flex items-center justify-center w-20 h-20 rounded-2xl gradient-primary shadow-lg">
                 <GraduationCap className="h-10 w-10 text-primary-foreground" />
               </div>
@@ -60,16 +60,107 @@ export default function Index() {
             <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 tracking-tight">
               SBA Manager
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-6 max-w-xl mx-auto">
               School-Based Assessment System for managing student assessments across all classes
             </p>
           </div>
         </div>
       </div>
 
+      {/* Login Options Section */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-semibold text-center text-foreground mb-8">
+            Welcome! How would you like to sign in?
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Teacher Login */}
+            <Card className="glass-card hover:shadow-xl transition-all hover:border-primary/50 group cursor-pointer animate-fade-in">
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Teachers</CardTitle>
+                <CardDescription>
+                  Access your class assessments and manage student records
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Find your school below to login or create an account
+                </p>
+                <div className="flex items-center justify-center text-primary font-medium">
+                  <span>Search schools below</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* School Admin Login */}
+            <Card 
+              className="glass-card hover:shadow-xl transition-all hover:border-accent/50 group cursor-pointer animate-fade-in"
+              style={{ animationDelay: '100ms' }}
+              onClick={() => navigate('/super-admin')}
+            >
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/20 transition-colors">
+                  <UserCheck className="h-8 w-8 text-accent-foreground" />
+                </div>
+                <CardTitle className="text-xl">School Administrators</CardTitle>
+                <CardDescription>
+                  Manage your school's classes, teachers, and SBA files
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Find your school below and access the admin portal
+                </p>
+                <div className="flex items-center justify-center text-accent-foreground font-medium">
+                  <span>Search schools below</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Super Admin Login */}
+            <Card 
+              className="glass-card hover:shadow-xl transition-all hover:border-secondary/50 group cursor-pointer animate-fade-in"
+              style={{ animationDelay: '200ms' }}
+              onClick={() => navigate('/super-admin-auth')}
+            >
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4 group-hover:bg-secondary/80 transition-colors">
+                  <Settings className="h-8 w-8 text-secondary-foreground" />
+                </div>
+                <CardTitle className="text-xl">Platform Admin</CardTitle>
+                <CardDescription>
+                  Manage all schools and platform-wide settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button 
+                  variant="secondary" 
+                  className="w-full group-hover:bg-secondary/90"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/super-admin-auth');
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Super Admin Login
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* School Finder Section */}
-      <section className="container mx-auto px-4 py-8">
-        <SchoolFinder />
+      <section className="container mx-auto px-4 py-8 bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <SchoolFinder />
+        </div>
       </section>
 
       {/* Features Section */}
@@ -130,11 +221,10 @@ export default function Index() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/super-admin-auth')}
+                onClick={() => navigate('/super-admin-setup')}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Settings className="h-4 w-4 mr-2" />
-                Platform Admin
+                First Time Setup
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
