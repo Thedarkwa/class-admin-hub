@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Crown, LogOut, Plus, Building2, Users, Palette,
-  Loader2, Trash2, Edit, ExternalLink
+  Loader2, Trash2, Edit, ExternalLink, Home
 } from 'lucide-react';
 import {
   Dialog,
@@ -316,6 +316,11 @@ export default function SuperAdmin() {
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+            <div className="h-6 w-px bg-border" />
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500">
               <Crown className="h-5 w-5 text-white" />
             </div>
