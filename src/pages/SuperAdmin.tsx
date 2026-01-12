@@ -211,64 +211,46 @@ export default function SuperAdmin() {
 
     setIsCreatingAdmin(true);
 
-    // Create admin account
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: adminEmail,
-      password: adminPassword,
-      options: {
-        emailRedirectTo: `${window.location.origin}/s/${schools.find(s => s.id === selectedSchoolId)?.slug}/admin`,
-        data: {
-          full_name: 'School Administrator',
-        },
+    // Create admin account via edge function (preserves super admin session)
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast({
+        title: 'Session expired',
+        description: 'Please log in again.',
+        variant: 'destructive',
+      });
+      setIsCreatingAdmin(false);
+      return;
+    }
+
+    const response = await supabase.functions.invoke('create-school-admin', {
+      body: {
+        email: adminEmail,
+        password: adminPassword,
+        schoolId: selectedSchoolId,
       },
     });
 
-    if (authError) {
+    if (response.error || response.data?.error) {
       toast({
         title: 'Failed to create admin',
-        description: authError.message,
+        description: response.error?.message || response.data?.error || 'Unknown error',
         variant: 'destructive',
       });
       setIsCreatingAdmin(false);
       return;
     }
 
-    if (!authData.user) {
-      toast({
-        title: 'Failed to create admin',
-        description: 'Could not create admin account.',
-        variant: 'destructive',
-      });
-      setIsCreatingAdmin(false);
-      return;
-    }
-
-    // Add admin role with school_id
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: authData.user.id,
-        role: 'admin',
-        school_id: selectedSchoolId,
-      });
-
-    if (roleError) {
-      toast({
-        title: 'Admin created partially',
-        description: 'Account created but role assignment failed.',
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Admin created',
-        description: 'School administrator has been created successfully.',
-      });
-      setAdminEmail('');
-      setAdminPassword('');
-      setSelectedSchoolId(null);
-      setIsAdminDialogOpen(false);
-      fetchData();
-    }
+    toast({
+      title: 'Admin created',
+      description: 'School administrator has been created successfully. They can now log in.',
+    });
+    setAdminEmail('');
+    setAdminPassword('');
+    setSelectedSchoolId(null);
+    setIsAdminDialogOpen(false);
+    fetchData();
 
     setIsCreatingAdmin(false);
   };
