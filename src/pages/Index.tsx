@@ -65,19 +65,22 @@ export default function Index() {
 
             {/* CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" onClick={() => navigate('/auth')} className="w-full sm:w-auto">
-                Teacher Login
+              <Button size="lg" onClick={() => navigate('/super-admin-auth')} className="w-full sm:w-auto">
+                Super Admin Login
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/super-admin-setup')}
                 className="w-full sm:w-auto"
               >
-                Create Account
+                Platform Setup
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              Schools access their portal via <code className="bg-muted px-1 rounded">/s/school-slug</code>
+            </p>
           </div>
         </div>
       </div>
