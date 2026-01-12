@@ -11,7 +11,7 @@ import {
   Shield, LogOut, Upload, Users, FileSpreadsheet, 
   Loader2, Check, X, School, Plus, Eye
 } from 'lucide-react';
-import SpreadsheetEditor from '@/components/SpreadsheetEditor';
+import ExcelViewer from '@/components/ExcelViewer';
 import {
   Select,
   SelectContent,
@@ -85,10 +85,7 @@ export default function SchoolAdmin() {
   const [classErrors, setClassErrors] = useState<Record<string, string>>({});
 
   // View SBA file dialog
-  const [viewingFile, setViewingFile] = useState<{ classId: string; className: string } | null>(null);
-  const [spreadsheetData, setSpreadsheetData] = useState<string[][] | null>(null);
-  const [isLoadingSpreadsheet, setIsLoadingSpreadsheet] = useState(false);
-  const [isSavingSpreadsheet, setIsSavingSpreadsheet] = useState(false);
+  const [viewingFile, setViewingFile] = useState<{ classId: string; className: string; filePath: string; fileName: string } | null>(null);
 
   const checkAdmin = useCallback(async (schoolId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -336,71 +333,21 @@ export default function SchoolAdmin() {
     return teachers.find(t => t.class_id === classId);
   };
 
-  const handleViewFile = async (classId: string, className: string) => {
-    setViewingFile({ classId, className });
-    setIsLoadingSpreadsheet(true);
-    setSpreadsheetData(null);
-
+  const handleViewFile = (classId: string, className: string) => {
     const file = sbaFiles.find(f => f.class_id === classId);
     if (file) {
-      const { data: fileData } = await supabase
-        .from('sba_files')
-        .select('spreadsheet_data')
-        .eq('id', file.id)
-        .single();
-
-      if (fileData?.spreadsheet_data) {
-        setSpreadsheetData(fileData.spreadsheet_data as string[][]);
-      }
+      setViewingFile({ 
+        classId, 
+        className, 
+        filePath: file.file_path,
+        fileName: file.file_name 
+      });
     }
-    setIsLoadingSpreadsheet(false);
   };
 
-  const handleSaveSpreadsheet = async (data: string[][]) => {
-    if (!viewingFile || !school) return;
-    
-    setIsSavingSpreadsheet(true);
-    const file = sbaFiles.find(f => f.class_id === viewingFile.classId);
-    
-    if (file) {
-      const { error } = await supabase
-        .from('sba_files')
-        .update({ spreadsheet_data: data as unknown as any })
-        .eq('id', file.id);
-
-      if (error) {
-        toast({
-          title: 'Failed to save',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Saved',
-          description: 'Spreadsheet data has been saved.',
-        });
-      }
-    }
-    setIsSavingSpreadsheet(false);
-  };
-
-  const handleDownloadSpreadsheet = async () => {
-    if (!viewingFile) return;
-    
-    const file = sbaFiles.find(f => f.class_id === viewingFile.classId);
-    if (!file) return;
-
-    const { data } = await supabase.storage
-      .from('sba-files')
-      .download(file.file_path);
-
-    if (data) {
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.file_name;
-      a.click();
-      URL.revokeObjectURL(url);
+  const handleSaveComplete = () => {
+    if (school) {
+      fetchData(school.id);
     }
   };
 
@@ -729,24 +676,24 @@ export default function SchoolAdmin() {
 
       {/* SBA File Viewer Dialog */}
       <Dialog open={!!viewingFile} onOpenChange={(open) => !open && setViewingFile(null)}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] w-full h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" style={{ color: school.primary_color }} />
               {viewingFile?.className} - SBA File
             </DialogTitle>
             <DialogDescription>
-              View and edit the SBA spreadsheet data
+              View and edit the Excel file with formulas preserved
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 min-h-0">
-            <SpreadsheetEditor
-              data={spreadsheetData || []}
-              onSave={handleSaveSpreadsheet}
-              onDownload={handleDownloadSpreadsheet}
-              isSaving={isSavingSpreadsheet}
-              isLoading={isLoadingSpreadsheet}
-            />
+          <div className="flex-1 min-h-0 px-4 pb-4">
+            {viewingFile && (
+              <ExcelViewer
+                filePath={viewingFile.filePath}
+                fileName={viewingFile.fileName}
+                onSaveComplete={handleSaveComplete}
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>
