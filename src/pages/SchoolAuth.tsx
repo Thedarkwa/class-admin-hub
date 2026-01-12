@@ -153,7 +153,7 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
-      redirectTo: `${window.location.origin}/s/${schoolSlug}`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setIsLoading(false);
 

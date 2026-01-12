@@ -18,6 +18,9 @@ import SchoolAdminAuth from "./pages/SchoolAdminAuth";
 import SchoolAdmin from "./pages/SchoolAdmin";
 import SchoolDashboard from "./pages/SchoolDashboard";
 
+// Shared pages
+import ResetPassword from "./pages/ResetPassword";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -29,6 +32,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Super Admin routes */}
             <Route path="/super-admin-setup" element={<SuperAdminSetup />} />
