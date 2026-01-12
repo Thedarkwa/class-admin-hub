@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Shield, FileSpreadsheet, ArrowRight, Loader2 } from 'lucide-react';
+import { GraduationCap, BookOpen, Shield, FileSpreadsheet, ArrowRight, Loader2, Settings } from 'lucide-react';
+import SchoolFinder from '@/components/SchoolFinder';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -62,28 +63,14 @@ export default function Index() {
             <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
               School-Based Assessment System for managing student assessments across all classes
             </p>
-
-            {/* CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" onClick={() => navigate('/super-admin-auth')} className="w-full sm:w-auto">
-                Super Admin Login
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => navigate('/super-admin-setup')}
-                className="w-full sm:w-auto"
-              >
-                Platform Setup
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              Schools access their portal via <code className="bg-muted px-1 rounded">/s/school-slug</code>
-            </p>
           </div>
         </div>
       </div>
+
+      {/* School Finder Section */}
+      <section className="container mx-auto px-4 py-8">
+        <SchoolFinder />
+      </section>
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
@@ -138,6 +125,17 @@ export default function Index() {
             <div className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-semibold text-foreground">SBA Manager</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/super-admin-auth')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Platform Admin
+              </Button>
             </div>
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} School-Based Assessment System
