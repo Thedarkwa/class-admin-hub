@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, Loader2 } from 'lucide-react';
@@ -10,14 +11,76 @@ import heroImage from '@/assets/hero-classroom.jpg';
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
-    }
+    const redirectUser = async () => {
+      if (!loading && user) {
+        setRedirecting(true);
+        
+        // Check for super_admin role
+        const { data: superAdminRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'super_admin')
+          .maybeSingle();
+
+        if (superAdminRole) {
+          navigate('/super-admin');
+          return;
+        }
+
+        // Check for admin role with school_id
+        const { data: adminRole } = await supabase
+          .from('user_roles')
+          .select('school_id')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (adminRole?.school_id) {
+          const { data: school } = await supabase
+            .from('schools')
+            .select('slug')
+            .eq('id', adminRole.school_id)
+            .single();
+          
+          if (school) {
+            navigate(`/s/${school.slug}/admin`);
+            return;
+          }
+        }
+
+        // Check for teacher profile
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('school_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (teacherProfile?.school_id) {
+          const { data: school } = await supabase
+            .from('schools')
+            .select('slug')
+            .eq('id', teacherProfile.school_id)
+            .single();
+          
+          if (school) {
+            navigate(`/s/${school.slug}/dashboard`);
+            return;
+          }
+        }
+        
+        // If no valid role found, stay on homepage
+        setRedirecting(false);
+      }
+    };
+
+    redirectUser();
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
