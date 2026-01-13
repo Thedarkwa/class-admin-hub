@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, ArrowDown, Loader2 } from 'lucide-react';
+import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, ArrowDown, Loader2, Instagram, Twitter, Facebook, Mail } from 'lucide-react';
 import SchoolFinder from '@/components/SchoolFinder';
 import heroImage from '@/assets/hero-classroom.jpg';
 
@@ -286,11 +286,49 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t bg-card/50">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-semibold text-foreground">SBA Manager</span>
             </div>
+            
+            <div className="flex items-center gap-4">
+              <a 
+                href="https://instagram.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://twitter.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Twitter"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://facebook.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a 
+                href="mailto:info@sbapeople.com"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Mail className="h-5 w-5" />
+                <span className="text-sm hidden sm:inline">info@sbapeople.com</span>
+              </a>
+            </div>
+            
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} School-Based Assessment System
             </p>
