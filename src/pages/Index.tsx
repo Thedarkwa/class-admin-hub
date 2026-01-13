@@ -291,16 +291,6 @@ export default function Index() {
               <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-semibold text-foreground">SBA Manager</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/super-admin-setup')}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                First Time Setup
-              </Button>
-            </div>
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} School-Based Assessment System
             </p>
