@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { SchoolBreadcrumb } from '@/components/SchoolBreadcrumb';
 import { 
   Shield, LogOut, Upload, Users, FileSpreadsheet, 
   Loader2, Check, X, School, Plus, Eye, Download, FolderOpen, History
@@ -402,7 +403,16 @@ export default function SchoolAdmin() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <div className="container mx-auto px-4 pt-4">
+        <SchoolBreadcrumb
+          schoolName={school.name}
+          schoolSlug={schoolSlug || ''}
+          items={[{ label: 'Admin Panel' }]}
+          primaryColor={school.primary_color}
+        />
+      </div>
+
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">

@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, GraduationCap, Loader2, Home } from 'lucide-react';
+import { BookOpen, GraduationCap, Loader2 } from 'lucide-react';
 import { PasswordInput } from '@/components/PasswordInput';
+import { SchoolBreadcrumb } from '@/components/SchoolBreadcrumb';
 import { z } from 'zod';
 
 interface ClassInfo {
@@ -340,17 +341,16 @@ export default function SchoolAuth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      {/* Home Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-4 left-4"
-        onClick={() => navigate('/')}
-      >
-        <Home className="h-4 w-4 mr-2" />
-        Home
-      </Button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
+      {/* Breadcrumb */}
+      <div className="absolute top-4 left-4">
+        <SchoolBreadcrumb
+          schoolName={school.name}
+          schoolSlug={schoolSlug || ''}
+          items={[{ label: 'Teacher Login' }]}
+          primaryColor={school.primary_color}
+        />
+      </div>
 
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo and Title */}

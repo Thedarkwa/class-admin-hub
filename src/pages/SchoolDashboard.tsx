@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import ExcelViewer from '@/components/ExcelViewer';
+import { SchoolBreadcrumb } from '@/components/SchoolBreadcrumb';
 import { GraduationCap, LogOut, User, School, FileSpreadsheet, Loader2, AlertCircle } from 'lucide-react';
 
 interface SchoolInfo {
@@ -176,7 +177,16 @@ export default function SchoolDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <div className="container mx-auto px-4 pt-4">
+        <SchoolBreadcrumb
+          schoolName={school.name}
+          schoolSlug={schoolSlug || ''}
+          items={[{ label: 'Dashboard' }]}
+          primaryColor={school.primary_color}
+        />
+      </div>
+
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
