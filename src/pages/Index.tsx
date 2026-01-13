@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, ArrowDown, Loader2, Instagram, Twitter, Facebook, Mail } from 'lucide-react';
 import SchoolFinder from '@/components/SchoolFinder';
 import heroImage from '@/assets/hero-classroom.jpg';
+import sbaLogo from '@/assets/sba-logo.jpg';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -126,8 +127,8 @@ export default function Index() {
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
             {/* Logo */}
             <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg border border-white/30">
-                <GraduationCap className="h-10 w-10 text-white" />
+              <div className="flex items-center justify-center w-24 h-24 rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg border border-white/30 overflow-hidden">
+                <img src={sbaLogo} alt="SBA People Logo" className="w-full h-full object-cover" />
               </div>
             </div>
 
@@ -287,9 +288,9 @@ export default function Index() {
       <footer className="border-t bg-card/50">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-foreground">SBA Manager</span>
+            <div className="flex items-center gap-3">
+              <img src={sbaLogo} alt="SBA People Logo" className="h-8 w-8 rounded object-cover" />
+              <span className="font-semibold text-foreground">The SBA People</span>
             </div>
             
             <div className="flex items-center gap-4">
