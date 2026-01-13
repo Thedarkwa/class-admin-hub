@@ -18,61 +18,65 @@ export default function Index() {
       if (!loading && user) {
         setRedirecting(true);
         
-        // Check for super_admin role
-        const { data: superAdminRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'super_admin')
-          .maybeSingle();
+        try {
+          // Check for super_admin role
+          const { data: superAdminRole } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'super_admin')
+            .maybeSingle();
 
-        if (superAdminRole) {
-          navigate('/super-admin');
-          return;
-        }
-
-        // Check for admin role with school_id
-        const { data: adminRole } = await supabase
-          .from('user_roles')
-          .select('school_id')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (adminRole?.school_id) {
-          const { data: school } = await supabase
-            .from('schools')
-            .select('slug')
-            .eq('id', adminRole.school_id)
-            .single();
-          
-          if (school) {
-            navigate(`/s/${school.slug}/admin`);
+          if (superAdminRole) {
+            navigate('/super-admin', { replace: true });
             return;
           }
-        }
 
-        // Check for teacher profile
-        const { data: teacherProfile } = await supabase
-          .from('teacher_profiles')
-          .select('school_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          // Check for admin role with school_id
+          const { data: adminRole } = await supabase
+            .from('user_roles')
+            .select('school_id')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
 
-        if (teacherProfile?.school_id) {
-          const { data: school } = await supabase
-            .from('schools')
-            .select('slug')
-            .eq('id', teacherProfile.school_id)
-            .single();
-          
-          if (school) {
-            navigate(`/s/${school.slug}/dashboard`);
-            return;
+          if (adminRole?.school_id) {
+            const { data: school } = await supabase
+              .from('schools')
+              .select('slug')
+              .eq('id', adminRole.school_id)
+              .single();
+            
+            if (school?.slug) {
+              navigate(`/s/${school.slug}/admin`, { replace: true });
+              return;
+            }
           }
+
+          // Check for teacher profile
+          const { data: teacherProfile } = await supabase
+            .from('teacher_profiles')
+            .select('school_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (teacherProfile?.school_id) {
+            const { data: school } = await supabase
+              .from('schools')
+              .select('slug')
+              .eq('id', teacherProfile.school_id)
+              .single();
+            
+            if (school?.slug) {
+              navigate(`/s/${school.slug}/dashboard`, { replace: true });
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error during redirect:', error);
         }
         
-        // If no valid role found, stay on homepage
+        // If no valid role found or error occurred, stay on homepage
         setRedirecting(false);
       }
     };
@@ -170,9 +174,8 @@ export default function Index() {
 
             {/* School Admin Login */}
             <Card 
-              className="glass-card hover:shadow-xl transition-all hover:border-accent/50 group cursor-pointer animate-fade-in"
+              className="glass-card hover:shadow-xl transition-all hover:border-accent/50 group animate-fade-in"
               style={{ animationDelay: '100ms' }}
-              onClick={() => navigate('/super-admin')}
             >
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/20 transition-colors">
