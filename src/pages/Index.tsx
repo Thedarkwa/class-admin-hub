@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { GraduationCap, BookOpen, Shield, FileSpreadsheet, Users, Settings, UserCheck, ArrowRight, ArrowDown, Loader2 } from 'lucide-react';
 import SchoolFinder from '@/components/SchoolFinder';
 import heroImage from '@/assets/hero-classroom.jpg';
 
@@ -165,9 +165,9 @@ export default function Index() {
                 <p className="text-sm text-muted-foreground text-center mb-4">
                   Find your school below to login or create an account
                 </p>
-                <div className="flex items-center justify-center text-primary font-medium">
+                <div className="flex flex-col items-center justify-center text-primary font-medium">
                   <span>Search schools below</span>
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowDown className="h-4 w-4 mt-1" />
                 </div>
               </CardContent>
             </Card>
@@ -190,9 +190,9 @@ export default function Index() {
                 <p className="text-sm text-muted-foreground text-center mb-4">
                   Find your school below and access the admin portal
                 </p>
-                <div className="flex items-center justify-center text-accent-foreground font-medium">
+                <div className="flex flex-col items-center justify-center text-accent-foreground font-medium">
                   <span>Search schools below</span>
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowDown className="h-4 w-4 mt-1" />
                 </div>
               </CardContent>
             </Card>
